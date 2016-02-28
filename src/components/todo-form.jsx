@@ -1,35 +1,25 @@
-import React from 'react';
+import React, { PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
+import { addTodo } from '../actions/todo-action'
 
 let TodoForm = React.createClass({
-	getInitialState() {
-		return { todo: ''}
-	},
-
 	handleSubmit(e) {
 		e.preventDefault();
-		if (this.state.todo !== '') {
-			this.props.onFormSubmit(this.state.todo);
+		let todo = { id:0, text: this.refs.todo.value, completed: false };
+		if (todo.text !== '') {
+			this.context.store.dispatch(addTodo(todo));
+			this.refs.todo.value = '';
+			findDOMNode(this.refs.todo).focus();
 		}
-
-		this.setState({
-			todo: ''
-		});
-
-		findDOMNode(this.refs.todo).focus();
-	},
-
-	onChange(e) {
-		this.setState({
-			todo: e.target.value
-		})
 	},
 
 	render() {
 		return(
 			<form onSubmit={this.handleSubmit}>
 				<div className="input-group">
-					<input type='text' ref='todo' onChange={this.onChange} value={this.state.todo} className="form-control" placeholder="Adicione Uma Tarefa" />
+					<input type='text' ref='todo'
+						className="form-control"
+						placeholder="Adicione Uma Tarefa" />
 					<span className="input-group-btn">
 						<button type='submit' className="btn btn-success">Adicionar</button>
 					</span>
@@ -38,5 +28,9 @@ let TodoForm = React.createClass({
 		)
 	}
 });
+
+TodoForm.contextTypes = {
+	store: PropTypes.object
+};
 
 export default TodoForm;

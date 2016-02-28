@@ -7,7 +7,7 @@ module.exports = {
 	entry: {
 		jsx: './index.jsx',
 		html: './index.html',
-		vendor: ['react']
+		vendor: ['react', 'redux', 'react-redux']
 	},
 	output: {
 		path: path.join(__dirname, './static'),

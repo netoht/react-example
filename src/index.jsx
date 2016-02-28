@@ -1,57 +1,39 @@
 import React from 'react'
 import { render } from 'react-dom'
+import { createStore } from 'redux'
+import { Provider } from 'react-redux'
 import TodoBanner from './components/banner'
 import TodoList from './components/todo-list'
 import TodoForm from './components/todo-form'
 import Filter from './components/filter'
+import reducers from './reducers/todo-reducer'
+import { updateTodo, filterData } from './actions/todo-action'
 
-let ordenaPorTexto = (t1, t2) => {
-	if (t1.text > t2.text) return 1;
-	if (t1.text < t2.text) return -1;
-	return 0;
-};
+// Store da aplicacao
+let appStore = createStore(reducers);
 
-let filterData = (data, type) => {
-	switch(type) {
-		case 'A': return data.filter(item => item.completed == false);
-		case 'C': return data.filter(item => item.completed == true);
-		default: return data;
-	}
-};
-
+// Componente principal da aplicacao
 let TodoApp = React.createClass({
 	getInitialState() {
-		return {
-			todos: [{ id: 1, text: 'Aprender React', completed: false }],
-			filter: ''
-		}
+		return { todos:[], filter: 'ALL' };
 	},
 
-	addTodo(text) {
-		let newTodo = { id: this.state.todos.length + 1, text, completed: false };
-		let todos = this.state.todos.concat([newTodo]);
-		todos.sort(ordenaPorTexto);
-		this.setState({ todos });
+	componentDidMount() {
+		let { store } = this.context;
+		this.unsubscribe = store.subscribe(() => {
+			this.setState( store.getState() );
+		});
+		this.setState( store.getState() );
 	},
 
-	updateTodo(e) {
-		e.stopPropagation();
-		let todoId = parseInt(e.target.getAttribute('data-id'));
-		let todos = this.state.todos.filter(item => item.id !== todoId);
-		let todo = this.state.todos.filter(item => item.id == todoId)
-			.reduce((prev, curr) => { return curr }, {});
-
-		todo.completed = !todo.completed;
-		todos.push(todo);
-		todos.sort(ordenaPorTexto);
-		this.setState({ todos });
+	componentWillUnmount() {
+		this.unsubscribe();
 	},
 
-	filterBy(e) {
-		e.stopPropagation();
-		let filterBy = e.target.getAttribute('data-filter');
-		let filter = ((filterBy === 'T') ? '' : filterBy);
-		this.setState({ filter });
+	updateTodo(evt) {
+		evt.stopPropagation();
+		let todo = { id: parseInt(evt.target.getAttribute('data-id')) };
+		this.context.store.dispatch(updateTodo(todo));
 	},
 
 	render() {
@@ -69,16 +51,20 @@ let TodoApp = React.createClass({
 						onUpdate={this.updateTodo} />
 				</div>
 
-				<Filter onFilter={this.filterBy}
-					filterBy={this.state.filter} />
+				<Filter filterBy={this.state.filter} />
 			</div>
 		)
 	}
-})
+});
+
+// passa o 'store' como parametro de contexto
+TodoApp.contextTypes = {
+	store: React.PropTypes.object
+};
 
 render(
-	<div>
-		<TodoApp/>
-	</div>,
+	<Provider store={appStore}>
+		<TodoApp />
+	</Provider>,
 	document.getElementById('container')
 );
