@@ -1,105 +1,84 @@
-import ReactDOM from 'react-dom'
 import React from 'react'
+import { render } from 'react-dom'
+import TodoBanner from './components/banner'
+import TodoList from './components/todo-list'
+import TodoForm from './components/todo-form'
+import Filter from './components/filter'
 
-var TodoApp = React.createClass({
-	getInitialState: function () {
-		return { 
-			todos: [
-				'Aprender React'
-			]
+let ordenaPorTexto = (t1, t2) => {
+	if (t1.text > t2.text) return 1;
+	if (t1.text < t2.text) return -1;
+	return 0;
+};
+
+let filterData = (data, type) => {
+	switch(type) {
+		case 'A': return data.filter(item => item.completed == false);
+		case 'C': return data.filter(item => item.completed == true);
+		default: return data;
+	}
+};
+
+let TodoApp = React.createClass({
+	getInitialState() {
+		return {
+			todos: [{ id: 1, text: 'Aprender React', completed: false }],
+			filter: ''
 		}
 	},
 
-	updatetodos: function (newtodo) {
-		let alltodos = this.state.todos.concat([newtodo])
-		this.setState({ todos: alltodos })
+	addTodo(text) {
+		let newTodo = { id: this.state.todos.length + 1, text, completed: false };
+		let todos = this.state.todos.concat([newTodo]);
+		todos.sort(ordenaPorTexto);
+		this.setState({ todos });
 	},
 
-	render: function () {
+	updateTodo(e) {
+		e.stopPropagation();
+		let todoId = parseInt(e.target.getAttribute('data-id'));
+		let todos = this.state.todos.filter(item => item.id !== todoId);
+		let todo = this.state.todos.filter(item => item.id == todoId)
+			.reduce((prev, curr) => { return curr }, {});
+
+		todo.completed = !todo.completed;
+		todos.push(todo);
+		todos.sort(ordenaPorTexto);
+		this.setState({ todos });
+	},
+
+	filterBy(e) {
+		e.stopPropagation();
+		let filterBy = e.target.getAttribute('data-filter');
+		let filter = ((filterBy === 'T') ? '' : filterBy);
+		this.setState({ filter });
+	},
+
+	render() {
+		let data = filterData(this.state.todos, this.state.filter);
 		return (
 			<div className="col-md-6 col-md-offset-3">
 				<TodoBanner />
 				<div className="row">
-					<TodoForm onFormSubmit={this.updatetodos} />
+					<TodoForm onFormSubmit={this.addTodo} />
 				</div>
 
 				<div className="row margin-top">
-					<TodoList todos={this.state.todos} />	
+					<TodoList
+						todos={data}
+						onUpdate={this.updateTodo} />
 				</div>
+
+				<Filter onFilter={this.filterBy}
+					filterBy={this.state.filter} />
 			</div>
 		)
 	}
 })
 
-var TodoBanner = React.createClass({
-	render: function () {
-		return(
-			<h1>React TaskList</h1>
-		)
-	}
-})
-
-var TodoList = React.createClass({
-	render: function () { 
-		return (
-			<ul className="list-group">
-				{this.props.todos.map(todo =>
-					<TodoListTodo todo={todo} />
-				)}
-			</ul>
-		)
-	}
-})
-
-var TodoListTodo = React.createClass({ 
-	render: function(){ 
-		return (
-			<li className="list-group-item" >{this.props.todo}</li> 
-		)
-	} 
-})
-
-var TodoForm = React.createClass({
-	getInitialState: function() {
-		return { todo: ''}
-	},
-
-	handleSubmit: function (e) {
-		e.preventDefault()
-		if(this.state.todo != ''){
-			this.props.onFormSubmit(this.state.todo)
-		}
-		
-		this.setState({
-			todo: ''
-		})
-		React.findDOMNode(this.refs.todo).focus()
-		return
-	},
-
-	onChange: function(e){ 
-		this.setState({ 
-			todo: e.target.value 
-		})
-	},
-
-	render: function () {
-		return(
-			<form onSubmit={this.handleSubmit}>
-				<div className="input-group">
-					<input type='text' ref='todo' onChange={this.onChange} value={this.state.todo} className="form-control" placeholder="Adicione Uma Tarefa" />
-					<span className="input-group-btn">
-						<button type='submit' className="btn btn-success">Adicionar</button>
-					</span>
-				</div>
-			</form>
-		)
-	}
-})
-
-ReactDOM.render(
+render(
 	<div>
 		<TodoApp/>
 	</div>,
 	document.getElementById('container')
-)
+);
